@@ -1,0 +1,87 @@
+hashfunction fH;
+usertype ConstVal;
+//usertype SharedSecret;
+
+const pufa:Function;
+const pufmla:Function;
+const pufb:Function;
+const pufmlb:Function;
+const Enc:Function;
+const Dec:Function;
+
+const C:ConstVal;
+const ts:ConstVal;
+const idA:ConstVal;
+const idB:ConstVal;
+
+//server
+macro HaPrime=fH(C,idA,idB,ts);
+macro RaPrime=pufmla(C);
+macro RbPrime=pufmlb(C);
+macro Pa=Enc(pufmla,RbPrime);
+macro Pb=Enc(pufmlb,RaPrime);
+macro Hsa=fH(C,ts,RaPrime,Pa);
+macro Hsb=fH(C,ts,RbPrime,Pb);
+macro HasPrime=fH(idA,RaPrime,RbPrime,ts);
+macro HbsPrime=fH(idB,RbPrime,RaPrime,ts);
+
+//iotA1
+macro Ha=fH(C,ts,idA,idB);
+//iotA2
+macro Ra=pufa(C);
+macro HsaPrime=fH(C,ts,Ra,Pa);
+macro pufmlb=Dec(Pa,Ra);
+macro Has=fH(idA,Ra,RbPrime,ts);
+
+//iotB
+macro Rb=pufb(C);
+macro HsbPrime=fH(C,ts,Rb,Pb);
+macro pufmla=Dec(Pb,Rb);
+macro Hbs=fH(idB,Rb,RaPrime,ts);
+
+protocol AsB(iotA,server,iotB){
+	role iotA{
+		//secret Ra;
+		send_m1(iotA,server,C,ts,idA,idB,Ha);
+		recv_m3(server,iotA,Pa,Hsa);	//from server
+		match(Hsa,HsaPrime);	//message from authentic server
+		send_m5(iotA,server,Has);		//for server
+		
+		claim_a1(iotA, Secret, Ra);
+		claim_a2(iotA ,Niagree);
+		claim_a3(iotA, Nisynch);
+		claim_a4(iotA, Alive);
+		claim_a5(iotA, Weakagree);
+	}
+	role server{
+		//secret Ra;
+		//secret Rb;
+		recv_m1(iotA,server,C,ts,idA,idB,Ha);	//from iotA
+		match(Ha,HaPrime);	//message from authentice iotA
+		send_m2(server,iotB,C,ts,idA,Pb,Hsb);	//for iotB
+		send_m3(server,iotA,Pa,Hsa);	//for iotA
+		recv_m4(iotB,server,Hbs);		//from iotB
+		match(Hbs,HbsPrime);	//iotB authentic
+		recv_m5(iotA,server,Has);		//from iotA
+		match(Has,HasPrime);	//iotA authentic
+		
+		claim_s1(server, Secret, RaPrime);
+		claim_s2(server, Secret, RbPrime);
+		claim_s3(server, Niagree);
+		claim_s4(server, Nisynch);
+		claim_s5(server, Alive);
+		claim_s6(server, Weakagree);
+	}
+	role iotB{
+		//secret Rb;
+		recv_m2(server,iotB,C,ts,idA,Pb,Hsb);	//from server
+		match(Hsb,HsbPrime);	//message from authentic server
+		send_m4(iotB,server,Hbs);		//for server
+		
+		claim_b1(iotB, Secret, Rb);
+		claim_b2(iotB, Niagree);
+		claim_b3(iotB, Nisynch);
+		claim_b4(iotB, Alive);
+		claim_b5(iotB, Weakagree);
+	}
+}
