@@ -1,4 +1,4 @@
-# PUF-and-PUF-ML-based-Autehntication
+# PUF-and-PUF-ML-based-Autehntication - Scyther script
 
 File 'Scyther based security verification code.spdl' contains the scrypt to execute in scyther tool for securty vericication.
 File 'verification outcome.jpg' show the result produced by the Scyther tool.
